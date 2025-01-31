@@ -1,0 +1,227 @@
+import pygame
+import random
+from pymorphy2 import MorphAnalyzer
+
+pygame.init()
+
+
+WIDTH, HEIGHT = 800, 900
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
+GREEN = (106, 170, 100)
+YELLOW = (201, 180, 88)
+DARK_GRAY = (120, 124, 126)
+LIGHT_BLUE = (52, 152, 219)
+ROWS = 6
+COLS = 5
+LETTER_SIZE = 70
+SPACING = 10
+FONT_SIZE = 40
+KEYBOARD_HEIGHT = 200
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Wordle")
+
+try:
+    font = pygame.font.Font("arial.ttf", FONT_SIZE)
+    score_font = pygame.font.Font("arial.ttf", 30)
+    info_font = pygame.font.Font("arial.ttf", 20)
+except:
+    font = pygame.font.SysFont("Arial", FONT_SIZE)
+    score_font = pygame.font.SysFont("Arial", 30)
+    info_font = pygame.font.SysFont("Arial", 20)
+
+
+try:
+    with open("russian.txt", "r", encoding="windows-1251") as file:
+        all_words = [word.strip().upper() for word in file if len(word.strip()) == 5]
+except UnicodeDecodeError:
+    print("Ошибка: Неверная кодировка файла. Убедитесь, что файл сохранен в кодировке Windows-1251.")
+    exit()
+
+morph = MorphAnalyzer()
+
+
+def is_noun_in_nominative(word):
+    parsed = morph.parse(word.lower())[0]
+    return 'NOUN' in parsed.tag and 'nomn' in parsed.tag
+
+
+russian_words = [word for word in all_words if is_noun_in_nominative(word)]
+
+current_guess = []
+guesses = [[] for _ in range(ROWS)]
+current_row = 0
+score = 0
+game_over = False
+correct_word = random.choice(russian_words).upper()
+russian_letters = "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ"
+
+keyboard_status = {letter: GRAY for letter in russian_letters}
+
+
+def draw_grid():
+    for row in range(ROWS):
+        for col in range(COLS):
+            x = col * (LETTER_SIZE + SPACING) + (WIDTH - COLS * (LETTER_SIZE + SPACING)) // 2
+            y = row * (LETTER_SIZE + SPACING) + 100
+            rect = pygame.Rect(x, y, LETTER_SIZE, LETTER_SIZE)
+            color = GRAY
+            if len(guesses[row]) > col:
+                color = guesses[row][col][1]
+            pygame.draw.rect(screen, color, rect, border_radius=10)
+            pygame.draw.rect(screen, BLACK, rect, 3, border_radius=10)
+
+
+def draw_letters():
+    for row in range(ROWS):
+        for col in range(len(guesses[row])):
+            letter = guesses[row][col][0]
+            x = col * (LETTER_SIZE + SPACING) + (WIDTH - COLS * (LETTER_SIZE + SPACING)) // 2 + LETTER_SIZE // 2
+            y = row * (LETTER_SIZE + SPACING) + 100 + LETTER_SIZE // 2
+            text = font.render(letter, True, WHITE)
+            screen.blit(text, text.get_rect(center=(x, y)))
+
+
+def check_guess():
+    global current_row, game_over, score
+    guess = ''.join(current_guess).upper()
+    if guess.lower() not in [word.lower() for word in russian_words]:
+        return False
+    temp_correct = list(correct_word)
+    guess_result = []
+
+    for i, letter in enumerate(guess):
+        if letter == correct_word[i]:
+            guess_result.append((letter, GREEN))
+            keyboard_status[letter] = GREEN
+            temp_correct[i] = None
+            score += 10
+        else:
+            guess_result.append((letter, DARK_GRAY))
+
+    for i, (letter, color) in enumerate(guess_result):
+        if color == DARK_GRAY and letter in temp_correct:
+            guess_result[i] = (letter, YELLOW)
+            if keyboard_status[letter] != GREEN:
+                keyboard_status[letter] = YELLOW
+            temp_correct.remove(letter)
+            score += 5
+        elif color == DARK_GRAY:
+            keyboard_status[letter] = DARK_GRAY
+
+    guesses[current_row] = guess_result
+    current_row += 1
+
+    if guess == correct_word:
+        game_over = True
+        score += 200
+    elif current_row >= ROWS:
+        game_over = True
+
+    return True
+
+
+def draw_score():
+    score_text = score_font.render(f"Очки: {score}", True, LIGHT_BLUE)
+    screen.blit(score_text, (10, 10))
+
+
+def new_game():
+    global current_guess, guesses, current_row, correct_word, game_over, score, keyboard_status
+    current_guess = []
+    guesses = [[] for _ in range(ROWS)]
+    current_row = 0
+    correct_word = random.choice(russian_words).upper()
+    game_over = False
+    score = 0
+    keyboard_status = {letter: GRAY for letter in russian_letters}
+
+
+def draw_game_over():
+    if correct_word == ''.join([g[0] for g in guesses[current_row - 1]]):
+        text = "ПОБЕДА! Нажмите пробел для новой игры"
+    else:
+        text = f"ПОРАЖЕНИЕ! Загаданное слово: {correct_word}. Нажмите пробел"
+    text_surface = font.render(text, True, LIGHT_BLUE)
+    screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, HEIGHT - 100))
+
+
+def draw_keyboard():
+    keyboard_layout = [
+        "ЙЦУКЕНГШЩЗХЪ",
+        "ФЫВАПРОЛДЖЭ",
+        "ЯЧСМИТЬБЮ"
+    ]
+    key_width = 40
+    key_height = 50
+    start_x = (WIDTH - (key_width * 12 + SPACING * 11)) // 2
+    start_y = HEIGHT - KEYBOARD_HEIGHT + 20
+
+    for row_index, row in enumerate(keyboard_layout):
+        for col_index, letter in enumerate(row):
+            x = start_x + col_index * (key_width + SPACING)
+            y = start_y + row_index * (key_height + SPACING)
+            rect = pygame.Rect(x, y, key_width, key_height)
+
+
+            shadow_rect = pygame.Rect(x + 3, y + 3, key_width, key_height)
+            pygame.draw.rect(screen, BLACK, shadow_rect, border_radius=8)
+
+
+            pygame.draw.rect(screen, keyboard_status[letter], rect, border_radius=8)
+            pygame.draw.rect(screen, BLACK, rect, 2, border_radius=8)
+
+
+            text = info_font.render(letter, True, WHITE)
+            screen.blit(text, text.get_rect(center=(x + key_width // 2, y + key_height // 2)))
+
+
+
+#типа запуск
+screen.fill(BLACK)
+draw_grid()
+draw_letters()
+draw_score()
+draw_keyboard()
+pygame.display.update()
+
+running = True
+while running:
+    screen.fill(BLACK)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if game_over:
+                if event.key == pygame.K_SPACE:
+                    new_game()
+            else:
+                if event.key == pygame.K_BACKSPACE and len(current_guess) > 0:
+                    current_guess.pop()
+                elif event.key == pygame.K_RETURN and len(current_guess) == COLS:
+                    if check_guess():
+                        current_guess = []
+                else:
+                    char = event.unicode.upper()
+                    if char in russian_letters and len(current_guess) < COLS:
+                        current_guess.append(char)
+
+    draw_grid()
+    draw_letters()
+    draw_score()
+    draw_keyboard()
+
+    for i, letter in enumerate(current_guess):
+        x = i * (LETTER_SIZE + SPACING) + (WIDTH - COLS * (LETTER_SIZE + SPACING)) // 2 + LETTER_SIZE // 2
+        y = current_row * (LETTER_SIZE + SPACING) + 100 + LETTER_SIZE // 2
+        text = font.render(letter, True, WHITE)
+        screen.blit(text, text.get_rect(center=(x, y)))
+
+    if game_over:
+        draw_game_over()
+
+    pygame.display.update()
+
+pygame.quit()
