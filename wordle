@@ -140,12 +140,19 @@ def new_game():
 
 
 def draw_game_over():
+    screen.fill(BLACK)
     if correct_word == ''.join([g[0] for g in guesses[current_row - 1]]):
         text = "ПОБЕДА! Нажмите пробел для новой игры"
     else:
-        text = f"ПОРАЖЕНИЕ! Загаданное слово: {correct_word}. Нажмите пробел"
+        text = "ПОРАЖЕНИЕ! Нажмите пробел для новой игры"
     text_surface = font.render(text, True, LIGHT_BLUE)
-    screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, HEIGHT - 100))
+    screen.blit(text_surface, (WIDTH // 2 - text_surface.get_width() // 2, HEIGHT // 2 - 100))
+    word_text = f"Загаданное слово: {correct_word}"
+    word_surface = font.render(word_text, True, WHITE)
+    screen.blit(word_surface, (WIDTH // 2 - word_surface.get_width() // 2, HEIGHT // 2))
+    score_text = f"Очки: {score}"
+    score_surface = font.render(score_text, True, WHITE)
+    screen.blit(score_surface, (WIDTH // 2 - score_surface.get_width() // 2, HEIGHT // 2 + 50))
 
 
 def draw_keyboard():
