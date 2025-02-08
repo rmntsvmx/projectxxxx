@@ -1,9 +1,14 @@
 import pygame
 import sys
+import random
+import time
+from pymorphy2 import MorphAnalyzer
 
 from button import ImageButton
 
 pygame.init()
+current_row = 0
+score = 0
 
 WIDTH, HEIGHT = 600, 600
 
@@ -73,31 +78,21 @@ def main_menu():
 
 
 def snake_game():
-    import pygame
-    import time
-    import random
-
     pygame.init()
-
     width = 600
     height = 600
     block = 50
-
     font_large = pygame.font.SysFont('Arial', 60, bold=True)
     font_medium = pygame.font.SysFont('Arial', 40, bold=True)
     font_small = pygame.font.SysFont('Arial', 25)
-
     green = (0, 177, 45)
     light_green = (34, 191, 17)
     red = (199, 5, 0)
     white = (255, 255, 255)
     black = (0, 0, 0)
     gold = (255, 215, 0)
-
     window = pygame.display.set_mode((width, height))
     pygame.display.set_caption('Snake')
-
-    font = pygame.font.SysFont('Arial', 50)
 
     def message(text, color, x, y, font):
         mess = font.render(text, True, color)
@@ -118,23 +113,22 @@ def snake_game():
         window.fill(black)
         message("Вы проиграли!", red, width // 2, height // 3, font_large)
         message(f"Ваш счёт: {score}", gold, width // 2, height // 2, font_medium)
-        message("Возврат в меню...", white, width // 2, height // 1.5, font_small)
+        message("Возврат в меню через 3 секунды...", white, width // 2, height // 1.5, font_small)
         pygame.display.flip()
-        time.sleep(2)
+        pygame.time.wait(3000)  # Ожидание 3 секунды
+        main_menu()  # Переход в главное меню
 
     def game():
         x1 = width // 2
         y1 = height // 2
         x1_change = 0
         y1_change = 0
-        foodx = round(random.randrange(0, width - block) / block) * block
-        foody = round(random.randrange(0, height - block) / block) * block
+        foodx = round(random.randrange(0, width - block - 50) / block) * block
+        foody = round(random.randrange(0, height - block - 50) / block) * block
         clock = pygame.time.Clock()
-
         snake_list = []
         len_of_snake = 1
         score = 0
-
         game_over = False
 
         while not game_over:
@@ -142,7 +136,8 @@ def snake_game():
                 if event.type == pygame.QUIT:
                     game_over = True
                     pygame.quit()
-                pygame.display.flip()
+                    sys.exit()
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
                         x1_change = -block
@@ -165,7 +160,6 @@ def snake_game():
 
             snake_head = [x1, y1]
             snake_list.append(snake_head)
-
             if len(snake_list) > len_of_snake:
                 del snake_list[0]
 
@@ -175,11 +169,13 @@ def snake_game():
                 len_of_snake += 1
                 score += 1
 
+            window.fill(black)
             draw_grid()
             pygame.draw.rect(window, red, [foodx, foody, block, block], 0)
             draw_snake(snake_list)
 
-            pygame.draw.rect(window, black, [0, 0, width, 40])
+            # Отображение счёта над игровым полем
+            pygame.draw.rect(window, black, [0, 0, width, 50])  # Заливка области под счёт
             message(f"Счёт: {score}", white, width // 10, 20, font_small)
 
             pygame.display.update()
@@ -188,15 +184,9 @@ def snake_game():
         game_over_screen(score)
 
     game()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Menu")
-    main_background = pygame.image.load("background.jpg")
-    main_background = pygame.transform.scale(main_background, (WIDTH, HEIGHT))
 
 
 def rocket_game():
-    import pygame
-    import random
 
     pygame.init()
 
@@ -281,7 +271,7 @@ def rocket_game():
     player = Player()
     all_sprites.add(player)
 
-    for i in range(8):
+    for i in range(12):
         enemy = Enemy()
         all_sprites.add(enemy)
         enemies.add(enemy)
@@ -308,6 +298,9 @@ def rocket_game():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.shot()
+                if event.key == pygame.K_r:
+                    rocket_game()
+                    pygame.display.flip()
 
         all_sprites.update()
 
@@ -335,23 +328,27 @@ def rocket_game():
         pygame.display.flip()
 
     # Экран поражения
-    if game_over:
+    def game_over_screen(score):
         window.fill((0, 0, 0))
         draw_text(window, "Вы проиграли!", 50, WIDTH // 2, HEIGHT // 3, (255, 0, 0))
-        draw_text(window, "Возврат в меню...", 30, WIDTH // 2, HEIGHT // 2, (255, 255, 255))
+        draw_text(window, f"Score: {score}", 35, WIDTH // 2, HEIGHT // 2, (255, 215, 0))
+        draw_text(window, "Возврат в меню через 3 секунды...", 30, WIDTH // 2, HEIGHT // 2 + 50, (255, 255, 255))
         pygame.display.flip()
-        pygame.time.delay(2000)  # Ожидание 3 секунды
+        pygame.time.wait(3000)
+
+    if game_over:
+        game_over_screen(score)
+
+    pygame.display.flip()
 
     # Возврат в главное меню
     pygame.display.set_mode((600, 600))  # Восстановление размеров окна для меню
     main_menu()
 
-
 def wordle_game():
-    import pygame
-    import random
-    from pymorphy2 import MorphAnalyzer
     pygame.init()
+
+    # Константы
     WIDTH, HEIGHT = 800, 900
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
@@ -366,22 +363,26 @@ def wordle_game():
     SPACING = 10
     FONT_SIZE = 40
     KEYBOARD_HEIGHT = 200
+
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Wordle")
+
     try:
         font = pygame.font.Font("arial.ttf", FONT_SIZE)
         score_font = pygame.font.Font("arial.ttf", 30)
-        info_font = pygame.font.Font("arial.ttf", 20)
+        info_font = pygame.font.SysFont("Arial", 20)
     except:
         font = pygame.font.SysFont("Arial", FONT_SIZE)
         score_font = pygame.font.SysFont("Arial", 30)
         info_font = pygame.font.SysFont("Arial", 20)
+
     try:
         with open("russian.txt", "r", encoding="windows-1251") as file:
             all_words = [word.strip().upper() for word in file if len(word.strip()) == 5]
     except UnicodeDecodeError:
         print("Ошибка: Неверная кодировка файла. Убедитесь, что файл сохранен в кодировке Windows-1251.")
         exit()
+
     morph = MorphAnalyzer()
 
     def is_noun_in_nominative(word):
@@ -389,6 +390,7 @@ def wordle_game():
         return 'NOUN' in parsed.tag and 'nomn' in parsed.tag
 
     russian_words = [word for word in all_words if is_noun_in_nominative(word)]
+
     current_guess = []
     guesses = [[] for _ in range(ROWS)]
     current_row = 0
@@ -413,14 +415,14 @@ def wordle_game():
     def draw_letters():
         for row in range(ROWS):
             for col in range(len(guesses[row])):
-                letter = guesses[row][col][0]
+                letter, color = guesses[row][col]
                 x = col * (LETTER_SIZE + SPACING) + (WIDTH - COLS * (LETTER_SIZE + SPACING)) // 2 + LETTER_SIZE // 2
                 y = row * (LETTER_SIZE + SPACING) + 100 + LETTER_SIZE // 2
                 text = font.render(letter, True, WHITE)
                 screen.blit(text, text.get_rect(center=(x, y)))
 
     def check_guess():
-        global current_row, game_over, score  # Declare all global variables used in the function
+        nonlocal current_row, game_over, score
         guess = ''.join(current_guess).upper()
         if guess.lower() not in [word.lower() for word in russian_words]:
             return False
@@ -457,7 +459,7 @@ def wordle_game():
         screen.blit(score_text, (10, 10))
 
     def new_game():
-        global current_guess, guesses, current_row, correct_word, game_over, score, keyboard_status
+        nonlocal current_guess, guesses, current_row, correct_word, game_over, score, keyboard_status
         current_guess = []
         guesses = [[] for _ in range(ROWS)]
         current_row = 0
@@ -468,27 +470,22 @@ def wordle_game():
 
     def draw_game_over():
         screen.fill(BLACK)
-
-        # Определяем результат игры
-        if any(''.join([g[0] for g in guess]) == correct_word for guess in guesses):
-            result_text = "ПОБЕДА! Нажмите пробел для новой игры"
-        else:
-            result_text = "ПОРАЖЕНИЕ! Нажмите пробел для новой игры"
-
-        # Отображение результата
+        result_text = "ПОБЕДА!" if any(''.join([g[0] for g in guess]) == correct_word for guess in guesses) else "ПОРАЖЕНИЕ!"
         text_surface = font.render(result_text, True, LIGHT_BLUE)
         text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
         screen.blit(text_surface, text_rect)
-
-        # Отображение загаданного слова
         word_surface = font.render(f"Загаданное слово: {correct_word}", True, WHITE)
         word_rect = word_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20))
         screen.blit(word_surface, word_rect)
-
-        # Отображение счета
         score_surface = font.render(f"Счет: {score}", True, WHITE)
         score_rect = score_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 90))
         screen.blit(score_surface, score_rect)
+        timer_surface = font.render("Возврат в меню через 3 секунды...", True, WHITE)
+        timer_rect = timer_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 150))
+        screen.blit(timer_surface, timer_rect)
+        pygame.display.flip()
+        pygame.time.wait(3000)  # Ожидание 3 секунды
+        main_menu()
 
     def draw_keyboard():
         keyboard_layout = [
@@ -512,13 +509,6 @@ def wordle_game():
                 text = info_font.render(letter, True, WHITE)
                 screen.blit(text, text.get_rect(center=(x + key_width // 2, y + key_height // 2)))
 
-    # типа запуск
-    screen.fill(BLACK)
-    draw_grid()
-    draw_letters()
-    draw_score()
-    draw_keyboard()
-    pygame.display.update()
     running = True
     while running:
         screen.fill(BLACK)
@@ -545,18 +535,20 @@ def wordle_game():
         draw_score()
         draw_keyboard()
 
-        for i, letter in enumerate(current_guess):
-            x = i * (LETTER_SIZE + SPACING) + (WIDTH - COLS * (LETTER_SIZE + SPACING)) // 2 + LETTER_SIZE // 2
-            y = current_row * (LETTER_SIZE + SPACING) + 100 + LETTER_SIZE // 2
-            text = font.render(letter, True, WHITE)
-            screen.blit(text, text.get_rect(center=(x, y)))
+        # Отрисовка текущей догадки
+        if not game_over:
+            for i, letter in enumerate(current_guess):
+                x = i * (LETTER_SIZE + SPACING) + (WIDTH - COLS * (LETTER_SIZE + SPACING)) // 2 + LETTER_SIZE // 2
+                y = current_row * (LETTER_SIZE + SPACING) + 100 + LETTER_SIZE // 2
+                text = font.render(letter, True, WHITE)
+                screen.blit(text, text.get_rect(center=(x, y)))
 
         if game_over:
             draw_game_over()
-            pygame.display.update()
-            pygame.time.delay(3000)
-            main_menu() 
+
         pygame.display.update()
+
+    pygame.quit()
 
 
 if __name__ == "__main__":
