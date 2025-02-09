@@ -1,5 +1,6 @@
 import pygame
 import sys
+import sqlite3
 import random
 import time
 from pymorphy2 import MorphAnalyzer
@@ -7,8 +8,21 @@ from pymorphy2 import MorphAnalyzer
 from button import ImageButton
 
 pygame.init()
-current_row = 0
-score = 0
+
+connection = sqlite3.connect('dop')
+cursor = connection.cursor()
+sq = cursor.execute('select snake from quest').fetchall()
+sq = sq[0][0]
+
+connection = sqlite3.connect('dop')
+cursor = connection.cursor()
+shq = cursor.execute('select shooter from quest').fetchall()
+shq = shq[0][0]
+
+connection = sqlite3.connect('dop')
+cursor = connection.cursor()
+wq = cursor.execute('select wordle from quest').fetchall()
+wq = wq[0][0]
 
 WIDTH, HEIGHT = 600, 600
 
@@ -17,11 +31,13 @@ pygame.display.set_caption("Menu")
 main_background = pygame.image.load("background.jpg")
 main_background = pygame.transform.scale(main_background, (WIDTH, HEIGHT))
 
-rocket_button = ImageButton(WIDTH / 2 - (297 / 4), 300, 297 / 2, 128 / 2, 'Метеориты', 'button1.png', 'button12.png',)
-snake_button = ImageButton(WIDTH / 2 - (297 / 4), 200, 297 / 2, 128 / 2, 'Змейка', 'button1.png', 'button12.png',)
-exit_button = ImageButton(WIDTH / 2 - (297 / 4), 500, 297 / 2, 128 / 2, 'Выход', 'button1.png', 'button12.png',)
-wordle_button = ImageButton(WIDTH / 2 - (297 / 4), 400, 297 / 2, 128 / 2, 'Вордли', 'button1.png', 'button12.png',)
 
+
+rocket_button = ImageButton(WIDTH / 2 - (297 / 4), 300, 297 / 2, 128 / 2, 'Метеориты', 'button1.png', 'button12.png')
+snake_button = ImageButton(WIDTH / 2 - (297 / 4), 200, 297 / 2, 128 / 2, 'Змейка', 'button1.png', 'button12.png')
+exit_button = ImageButton(WIDTH / 2 - (297 / 4), 500, 297 / 2, 128 / 2, 'Выход', 'button1.png', 'button12.png')
+wordle_button = ImageButton(WIDTH / 2 - (297 / 4), 400, 297 / 2, 128 / 2, 'Вордли', 'button1.png', 'button12.png')
+quest_button = ImageButton(150, 300, 60, 80,'', 'button1.png', 'button12.png')
 
 def main_menu():
     pygame.init()
@@ -44,6 +60,7 @@ def main_menu():
             rocket_button.check_hover(pygame.mouse.get_pos())
             exit_button.check_hover(pygame.mouse.get_pos())
             snake_button.check_hover(pygame.mouse.get_pos())
+            quest_button.check_hover(pygame.mouse.get_pos())
 
         if event.type == pygame.USEREVENT and event.button == snake_button:
             snake_game()
@@ -54,6 +71,9 @@ def main_menu():
         if event.type == pygame.USEREVENT and event.button == wordle_button:
             wordle_game()
 
+        if event.type == pygame.USEREVENT and event.button == quest_button:
+            quest()
+
         if event.type == pygame.USEREVENT and event.button == exit_button:
             pygame.display.flip()
             pygame.quit()
@@ -62,6 +82,9 @@ def main_menu():
 
         wordle_button.handle_event(event)
         wordle_button.draw(screen)
+
+        quest_button.handle_event(event)
+        quest_button.draw(screen)
 
 
         rocket_button.handle_event(event)
@@ -77,22 +100,70 @@ def main_menu():
         pygame.display.flip()
 
 
-def snake_game():
+def quest():
     pygame.init()
+    running = True
+    while running:
+        screen.fill((0, 0, 0))
+        screen.blit(main_background, (0, 0))
+
+        font = pygame.font.Font(None, 72)
+        text_surface = font.render("ЗАДАНИЯ", True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(WIDTH / 2, 100))
+        screen.blit(text_surface, text_rect)
+
+        font = pygame.font.Font(None, 52)
+        s = str(sq)
+        text_surface = font.render("Яблоки: " + s + '/100', True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(WIDTH / 2, 200))
+        screen.blit(text_surface, text_rect)
+
+        font = pygame.font.Font(None, 52)
+        sh = str(shq)
+        text_surface = font.render("Очков за метеориты: " + sh + "/1000", True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(WIDTH / 2, 300))
+        screen.blit(text_surface, text_rect)
+
+        font = pygame.font.Font(None, 52)
+        w = str(wq)
+        text_surface = font.render("Очки за слова: " + w + '/1000', True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(WIDTH / 2, 400))
+        screen.blit(text_surface, text_rect)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:  # Обработка Escape
+                    running = False
+
+        pygame.display.flip()
+
+def snake_game():
+
+    pygame.init()
+
     width = 600
     height = 600
     block = 50
+
     font_large = pygame.font.SysFont('Arial', 60, bold=True)
     font_medium = pygame.font.SysFont('Arial', 40, bold=True)
     font_small = pygame.font.SysFont('Arial', 25)
+
     green = (0, 177, 45)
     light_green = (34, 191, 17)
     red = (199, 5, 0)
     white = (255, 255, 255)
     black = (0, 0, 0)
     gold = (255, 215, 0)
+
     window = pygame.display.set_mode((width, height))
     pygame.display.set_caption('Snake')
+
+    font = pygame.font.SysFont('Arial', 50)
 
     def message(text, color, x, y, font):
         mess = font.render(text, True, color)
@@ -113,22 +184,23 @@ def snake_game():
         window.fill(black)
         message("Вы проиграли!", red, width // 2, height // 3, font_large)
         message(f"Ваш счёт: {score}", gold, width // 2, height // 2, font_medium)
-        message("Возврат в меню через 3 секунды...", white, width // 2, height // 1.5, font_small)
+        message("Возврат в меню...", white, width // 2, height // 1.5, font_small)
         pygame.display.flip()
-        pygame.time.wait(3000)  # Ожидание 3 секунды
-        main_menu()  # Переход в главное меню
+        time.sleep(1.5)
 
     def game():
         x1 = width // 2
         y1 = height // 2
         x1_change = 0
         y1_change = 0
-        foodx = round(random.randrange(0, width - block - 50) / block) * block
-        foody = round(random.randrange(0, height - block - 50) / block) * block
+        foodx = round(random.randrange(0, width - block) / block) * block
+        foody = round(random.randrange(0, height - block) / block) * block
         clock = pygame.time.Clock()
+
         snake_list = []
         len_of_snake = 1
         score = 0
+
         game_over = False
 
         while not game_over:
@@ -136,8 +208,7 @@ def snake_game():
                 if event.type == pygame.QUIT:
                     game_over = True
                     pygame.quit()
-                    sys.exit()
-
+                pygame.display.flip()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
                         x1_change = -block
@@ -160,6 +231,7 @@ def snake_game():
 
             snake_head = [x1, y1]
             snake_list.append(snake_head)
+
             if len(snake_list) > len_of_snake:
                 del snake_list[0]
 
@@ -168,14 +240,18 @@ def snake_game():
                 foody = round(random.randrange(0, height - block) / block) * block
                 len_of_snake += 1
                 score += 1
+                global sq
+                if sq < 100:
+                    sq += 1
+                    a = cursor.execute('UPDATE quest SET snake = snake + 1')
+                    connection.commit()
 
-            window.fill(black)
+
+
             draw_grid()
             pygame.draw.rect(window, red, [foodx, foody, block, block], 0)
             draw_snake(snake_list)
 
-            # Отображение счёта над игровым полем
-            pygame.draw.rect(window, black, [0, 0, width, 50])  # Заливка области под счёт
             message(f"Счёт: {score}", white, width // 10, 20, font_small)
 
             pygame.display.update()
@@ -184,9 +260,15 @@ def snake_game():
         game_over_screen(score)
 
     game()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Menu")
+    main_background = pygame.image.load("background.jpg")
+    main_background = pygame.transform.scale(main_background, (WIDTH, HEIGHT))
 
 
 def rocket_game():
+    import pygame
+    import random
 
     pygame.init()
 
@@ -195,11 +277,11 @@ def rocket_game():
     SPEED = 5
     window = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption('Shooter')
-    back = pygame.image.load('starfield.jpg').convert()
+    back = pygame.image.load('starfield.png').convert()
     back_rect = back.get_rect()
-    player_img = pygame.image.load('rocket.jpg').convert()
-    meteor_img = pygame.image.load('meteor.jpg').convert()
-    lazer_img = pygame.image.load('laser.jpg').convert()
+    player_img = pygame.image.load('rocket.png').convert()
+    meteor_img = pygame.image.load('meteor.png').convert()
+    lazer_img = pygame.image.load('laser.png').convert()
     clock = pygame.time.Clock()
 
     class Player(pygame.sprite.Sprite):
@@ -298,9 +380,6 @@ def rocket_game():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     player.shot()
-                if event.key == pygame.K_r:
-                    rocket_game()
-                    pygame.display.flip()
 
         all_sprites.update()
 
@@ -316,6 +395,11 @@ def rocket_game():
         hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
         for hit in hits:
             score += 10
+            global shq
+            if shq < 1000:
+                shq += 10
+                a = cursor.execute('UPDATE quest SET shooter = shooter + 10')
+                connection.commit()
             enemy = Enemy()
             all_sprites.add(enemy)
             enemies.add(enemy)
@@ -328,22 +412,18 @@ def rocket_game():
         pygame.display.flip()
 
     # Экран поражения
-    def game_over_screen(score):
-        window.fill((0, 0, 0))
-        draw_text(window, "Вы проиграли!", 50, WIDTH // 2, HEIGHT // 3, (255, 0, 0))
-        draw_text(window, f"Score: {score}", 35, WIDTH // 2, HEIGHT // 2, (255, 215, 0))
-        draw_text(window, "Возврат в меню через 3 секунды...", 30, WIDTH // 2, HEIGHT // 2 + 50, (255, 255, 255))
-        pygame.display.flip()
-        pygame.time.wait(3000)
-
     if game_over:
-        game_over_screen(score)
-
-    pygame.display.flip()
+        window.fill((0, 0, 0))
+        draw_text(window, "Вы проиграли!", 50, WIDTH // 2, 100, (255, 0, 0))
+        draw_text(window, f"Score: {score}", 35, WIDTH // 2, 175, (255, 215, 0))
+        draw_text(window, "Возврат в меню...", 35, WIDTH // 2, 250, (255, 255, 255))
+        pygame.display.flip()
+        pygame.time.delay(1500)
 
     # Возврат в главное меню
     pygame.display.set_mode((600, 600))  # Восстановление размеров окна для меню
     main_menu()
+
 
 def wordle_game():
     pygame.init()
@@ -352,6 +432,7 @@ def wordle_game():
     WIDTH, HEIGHT = 800, 900
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
+    RED = (255, 0, 0)
     GRAY = (200, 200, 200)
     GREEN = (106, 170, 100)
     YELLOW = (201, 180, 88)
@@ -469,22 +550,37 @@ def wordle_game():
         keyboard_status = {letter: GRAY for letter in russian_letters}
 
     def draw_game_over():
+        global wq  # Добавляем глобальную переменную
         screen.fill(BLACK)
-        result_text = "ПОБЕДА!" if any(''.join([g[0] for g in guess]) == correct_word for guess in guesses) else "ПОРАЖЕНИЕ!"
-        text_surface = font.render(result_text, True, LIGHT_BLUE)
+        result_text = "ПОБЕДА!" if any(
+            ''.join([g[0] for g in guess]) == correct_word for guess in guesses) else "ПОРАЖЕНИЕ!"
+        text_surface = font.render(result_text, True, RED)
         text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 50))
         screen.blit(text_surface, text_rect)
-        word_surface = font.render(f"Загаданное слово: {correct_word}", True, WHITE)
+        word_surface = font.render(f"Загаданное слово: {correct_word}", True, YELLOW)
         word_rect = word_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20))
         screen.blit(word_surface, word_rect)
-        score_surface = font.render(f"Счет: {score}", True, WHITE)
+        score_surface = font.render(f"Счет: {score}", True, GREEN)
         score_rect = score_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 90))
         screen.blit(score_surface, score_rect)
-        timer_surface = font.render("Возврат в меню через 3 секунды...", True, WHITE)
+        timer_surface = font.render("Возврат в меню...", True, WHITE)
         timer_rect = timer_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 150))
         screen.blit(timer_surface, timer_rect)
+
+        # Обновляем очки задания
+        if wq < 1000:
+            connection = sqlite3.connect('dop')
+            cursor = connection.cursor()
+            # Убедимся, что не превышаем 1000
+            new_score = min(wq + score, 1000)
+            cursor.execute('UPDATE quest SET wordle = ?', (new_score,))
+            connection.commit()
+            connection.close()
+            wq = new_score  # Обновляем глобальную переменную
+
         pygame.display.flip()
-        pygame.time.wait(3000)  # Ожидание 3 секунды
+        pygame.time.wait(3000)
+        pygame.display.set_mode((600, 600))
         main_menu()
 
     def draw_keyboard():
