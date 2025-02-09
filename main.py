@@ -136,7 +136,7 @@ def quest():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:  # Обработка Escape
+                if event.key == pygame.K_ESCAPE: 
                     running = False
 
         pygame.display.flip()
@@ -383,7 +383,7 @@ def rocket_game():
 
         all_sprites.update()
 
-        # Проверка столкновений
+
         hits = pygame.sprite.spritecollide(player, enemies, True)
         for hit in hits:
             player.hp -= 20
@@ -391,7 +391,7 @@ def rocket_game():
                 game_over = True
                 running = False
 
-        # Проверка попадания пуль по врагам
+
         hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
         for hit in hits:
             score += 10
@@ -404,14 +404,14 @@ def rocket_game():
             all_sprites.add(enemy)
             enemies.add(enemy)
 
-        # Рендер
+
         window.blit(back, back_rect)
         all_sprites.draw(window)
         draw_text(window, f"Score: {score}", 25, WIDTH // 2, 10)
         draw_text(window, f"HP: {player.hp}", 25, WIDTH // 2, 40)
         pygame.display.flip()
 
-    # Экран поражения
+
     if game_over:
         window.fill((0, 0, 0))
         draw_text(window, "Вы проиграли!", 50, WIDTH // 2, 100, (255, 0, 0))
@@ -420,15 +420,14 @@ def rocket_game():
         pygame.display.flip()
         pygame.time.delay(1500)
 
-    # Возврат в главное меню
-    pygame.display.set_mode((600, 600))  # Восстановление размеров окна для меню
+
+    pygame.display.set_mode((600, 600))  
     main_menu()
 
 
 def wordle_game():
     pygame.init()
 
-    # Константы
     WIDTH, HEIGHT = 800, 900
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
@@ -550,7 +549,7 @@ def wordle_game():
         keyboard_status = {letter: GRAY for letter in russian_letters}
 
     def draw_game_over():
-        global wq  # Добавляем глобальную переменную
+        global wq  
         screen.fill(BLACK)
         result_text = "ПОБЕДА!" if any(
             ''.join([g[0] for g in guess]) == correct_word for guess in guesses) else "ПОРАЖЕНИЕ!"
@@ -567,7 +566,7 @@ def wordle_game():
         timer_rect = timer_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 150))
         screen.blit(timer_surface, timer_rect)
 
-        # Обновляем очки задания
+
         if wq < 1000:
             connection = sqlite3.connect('dop')
             cursor = connection.cursor()
@@ -576,7 +575,7 @@ def wordle_game():
             cursor.execute('UPDATE quest SET wordle = ?', (new_score,))
             connection.commit()
             connection.close()
-            wq = new_score  # Обновляем глобальную переменную
+            wq = new_score  
 
         pygame.display.flip()
         pygame.time.wait(3000)
@@ -631,7 +630,7 @@ def wordle_game():
         draw_score()
         draw_keyboard()
 
-        # Отрисовка текущей догадки
+
         if not game_over:
             for i, letter in enumerate(current_guess):
                 x = i * (LETTER_SIZE + SPACING) + (WIDTH - COLS * (LETTER_SIZE + SPACING)) // 2 + LETTER_SIZE // 2
