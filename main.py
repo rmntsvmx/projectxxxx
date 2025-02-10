@@ -255,7 +255,7 @@ def snake_game():
             message(f"Счёт: {score}", white, width // 10, 20, font_small)
 
             pygame.display.update()
-            clock.tick(10)
+            clock.tick(10) #cкорость змейки
 
         game_over_screen(score)
 
@@ -353,7 +353,7 @@ def rocket_game():
     player = Player()
     all_sprites.add(player)
 
-    for i in range(12):
+    for i in range(12): #количество метеоритов
         enemy = Enemy()
         all_sprites.add(enemy)
         enemies.add(enemy)
@@ -421,7 +421,7 @@ def rocket_game():
         pygame.time.delay(1500)
 
 
-    pygame.display.set_mode((600, 600))  
+    pygame.display.set_mode((600, 600))
     main_menu()
 
 
@@ -570,12 +570,11 @@ def wordle_game():
         if wq < 1000:
             connection = sqlite3.connect('dop')
             cursor = connection.cursor()
-            # Убедимся, что не превышаем 1000
             new_score = min(wq + score, 1000)
             cursor.execute('UPDATE quest SET wordle = ?', (new_score,))
             connection.commit()
             connection.close()
-            wq = new_score  
+            wq = new_score
 
         pygame.display.flip()
         pygame.time.wait(3000)
